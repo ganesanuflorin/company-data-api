@@ -11,7 +11,8 @@
 	<groupId>com.company.data.api</groupId>
 	<artifactId>challenge</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>challenge</name>
+    <packaging>pom</packaging>
+    <name>challenge</name>
 	<description>Company data api</description>
 	<url/>
 	<licenses>
@@ -20,7 +21,10 @@
 	<developers>
 		<developer/>
 	</developers>
-	<scm>
+    <modules>
+        <module>scraper</module>
+    </modules>
+    <scm>
 		<connection/>
 		<developerConnection/>
 		<tag/>
@@ -39,6 +43,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.38</version>
 		</dependency>
 	</dependencies>
 
