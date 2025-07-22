@@ -6,8 +6,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +35,7 @@ public class ScraperService {
         Set<String> phoneNumbers = new HashSet<>();
         Set<String> socialMediaLinks = new HashSet<>();
         Set<String> visited = new HashSet<>();
+        String status = "success";
 
         try {
             Document mainDoc = Jsoup.connect(url)
@@ -59,16 +66,26 @@ public class ScraperService {
                                 extractDataFromDoc(subDoc, phoneNumbers, socialMediaLinks);
 
                             } catch (Exception ignore) {
-                                ignore.printStackTrace();
+                                status = "failed_to_fetch_" + href;
                             }
                         }
                     }
                 }
             }
+        } catch (UnknownHostException e) {
+            status = "unknown_host";
+        } catch (SocketTimeoutException e) {
+            status = "timeout";
+        } catch (IllegalArgumentException e) {
+            status = "invalid_url";
         } catch (IOException e) {
+            status = "io_exception";
+            e.printStackTrace();
+        } catch (Exception e) {
+            status = "unexpected_error";
             e.printStackTrace();
         }
-        return new ScrapeModel(url, new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks));
+        return new ScrapeModel(url, status, new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks));
     }
 
     private void extractDataFromDoc(Document doc, Set<String> phones, Set<String> socialLinks) {
@@ -86,5 +103,23 @@ public class ScraperService {
                 }
             }
         }
+    }
+
+    public List<ScrapeModel> scrapeFromCSV(MultipartFile file) {
+        List<ScrapeModel> results = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String url = "http://" + line.trim();
+                if (!url.isEmpty()) {
+                    ScrapeModel scrapeModel = scrapeWebsite(url);
+                    results.add(scrapeModel);
+                    System.out.println(results.size() + " URLs processed so far.");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return results;
     }
 }

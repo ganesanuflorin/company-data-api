@@ -10,6 +10,7 @@ import java.util.List;
 @Getter
 public class ScrapeModel {
     private String url;
+    private String status;
     private List<String> phoneNumbers;
     private List<String> socialMediaLinks;
 
