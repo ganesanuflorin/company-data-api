@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -106,20 +109,35 @@ public class ScraperService {
     }
 
     public List<ScrapeModel> scrapeFromCSV(MultipartFile file) {
-        List<ScrapeModel> results = new ArrayList<>();
+        List<Future<ScrapeModel>> futureList = new ArrayList<>();
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String url = "http://" + line.trim();
                 if (!url.isEmpty()) {
-                    ScrapeModel scrapeModel = scrapeWebsite(url);
-                    results.add(scrapeModel);
-                    System.out.println(results.size() + " URLs processed so far.");
+
+                    Future<ScrapeModel> future = executor.submit(() -> scrapeWebsite(url));
+                    futureList.add(future);
+//                    ScrapeModel scrapeModel = scrapeWebsite(url);
+//                    results.add(scrapeModel);
+//                    System.out.println(results.size() + " URLs processed so far.");
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        List<ScrapeModel> results = new ArrayList<>();
+        for (Future<ScrapeModel> future : futureList) {
+            try {
+                results.add(future.get());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        executor.shutdown();
         return results;
     }
 }
