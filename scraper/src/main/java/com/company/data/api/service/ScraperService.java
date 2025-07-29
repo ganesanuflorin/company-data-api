@@ -211,6 +211,46 @@ public class ScraperService {
             }
         }
         executor.shutdown();
+        analyzeData(results);
         return results;
+    }
+
+    public void analyzeData(List<ScrapeModel> scrapeModels) {
+        int totalWebsites = scrapeModels.size();
+        int withAnyData = 0;
+        int withPhoneNumbers = 0;
+        int withSocialMediaLinks = 0;
+        int withAddresses = 0;
+        int invalidWebsites = 0;
+
+        for (ScrapeModel model : scrapeModels) {
+            if (model.getStatus().equals("success")) {
+                withAnyData++;
+                if (!model.getPhoneNumbers().isEmpty()) {
+                    withPhoneNumbers++;
+                }
+                if (!model.getSocialMediaLinks().isEmpty()) {
+                    withSocialMediaLinks++;
+                }
+                if (!model.getAddresses().isEmpty()) {
+                    withAddresses++;
+                }
+            } else if (model.getStatus().equals("invalid")) {
+                invalidWebsites++;
+            }
+
+        }
+        System.out.println("\n Analysis of scraped data:");
+        System.out.println("Total websites scraped: " + totalWebsites);
+        System.out.println("Websites with any data: " + withAnyData + " (" + percentage(withAnyData, totalWebsites) + ")");
+        System.out.println("Websites with phone numbers: " + withPhoneNumbers + " (" + percentage(withPhoneNumbers, totalWebsites) + ")");
+        System.out.println("Websites with social media links: " + withSocialMediaLinks + " (" + percentage(withSocialMediaLinks, totalWebsites) + ")");
+        System.out.println("Websites with addresses: " + withAddresses + " (" + percentage(withAddresses, totalWebsites) + ")");
+        System.out.println("Invalid websites: " + invalidWebsites + " (" + percentage(invalidWebsites, totalWebsites) + ")");
+    }
+
+    private String percentage(int part, int total) {
+        if (total == 0) return "0%";
+        return String.format("%.2f%%", (part / (double) total) * 100);
     }
 }
