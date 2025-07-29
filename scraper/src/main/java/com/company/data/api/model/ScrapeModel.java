@@ -13,6 +13,6 @@ public class ScrapeModel {
     private String status;
     private List<String> phoneNumbers;
     private List<String> socialMediaLinks;
-
+    private List<String> addresses;
 
 }
