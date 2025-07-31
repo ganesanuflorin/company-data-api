@@ -17,7 +17,7 @@ class ScraperClientTest {
      void testScrapeWebsiteReal() {
         String testUrl = "https://timent.com/";
 
-         ScrapeModel result = scraperClient.scrapeWebsite(testUrl);
+         ScraperModel result = scraperClient.scrapeWebsite(testUrl);
 
          assertNotNull(result);
          assertEquals(testUrl + "contact", result.domain());
