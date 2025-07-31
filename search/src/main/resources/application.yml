@@ -1,0 +1,6 @@
+server:
+  port: 8081
+
+scraper:
+  api:
+    url: http://localhost:8080/scrape

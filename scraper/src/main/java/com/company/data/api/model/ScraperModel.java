@@ -8,8 +8,8 @@ import java.util.List;
 
 @AllArgsConstructor
 @Getter
-public class ScrapeModel {
-    private String url;
+public class ScraperModel {
+    private String domain;
     private String status;
     private List<String> phoneNumbers;
     private List<String> socialMediaLinks;

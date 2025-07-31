@@ -3,9 +3,9 @@ package com.company.data.api;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "com.company")
-public class Main {
+@SpringBootApplication
+public class ScraperApplication {
     public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+        SpringApplication.run(ScraperApplication.class, args);
     }
 }

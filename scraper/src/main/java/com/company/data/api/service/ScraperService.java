@@ -1,6 +1,6 @@
 package com.company.data.api.service;
 
-import com.company.data.api.model.ScrapeModel;
+import com.company.data.api.model.ScraperModel;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -44,16 +44,16 @@ public class ScraperService {
             Pattern.CASE_INSENSITIVE
     );
 
-    public ScrapeModel scrapeWebsite(String url) {
+    public ScraperModel scrapeWebsite(String url) {
 
         if (url == null || url.isEmpty()) {
-            return new ScrapeModel(url, "invalid", List.of(), List.of(), List.of());
+            return new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
         }
         int statusCode = validateUrl(url);
         if (statusCode != 200) {
-            return new ScrapeModel(url, "invalid", List.of(), List.of(), List.of());
+            return new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
         }
-        ScrapeModel result = new ScrapeModel(url, "invalid", List.of(), List.of(), List.of());
+        ScraperModel result = new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
         Set<String> phoneNumbers = new HashSet<>();
         Set<String> addresses = new HashSet<>();
         Set<String> socialMediaLinks = new HashSet<>();
@@ -110,7 +110,7 @@ public class ScraperService {
         return statusCode;
     }
 
-    private ScrapeModel scrapewWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
+    private ScraperModel scrapewWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
 
         WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver();
@@ -130,13 +130,13 @@ public class ScraperService {
             String status = (phoneNumbers.isEmpty() && socialMediaLinks.isEmpty() && addresses.isEmpty())
                     ? "empty_after_fallback" : "success_fallback";
 
-            return new ScrapeModel(url, status,
+            return new ScraperModel(url, status,
                     new ArrayList<>(phoneNumbers),
                     new ArrayList<>(socialMediaLinks),
                     new ArrayList<>(addresses));
 
         } catch (RuntimeException e) {
-            return new ScrapeModel(url, "selenium_failed", List.of(), List.of(), List.of());
+            return new ScraperModel(url, "selenium_failed", List.of(), List.of(), List.of());
         } finally {
             driver.quit();
         }
@@ -154,7 +154,7 @@ public class ScraperService {
         }
     }
 
-    private ScrapeModel scrapeWithJsoup(Document doc, String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
+    private ScraperModel scrapeWithJsoup(Document doc, String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
 
         String htmlContent = doc.body().html();
         String plainText = Jsoup.parse(htmlContent.replaceAll("(?i)<br\\s*/?>", " ")).text().replaceAll("\\s+", " ").trim();
@@ -170,7 +170,7 @@ public class ScraperService {
             }
         }
 
-        return new ScrapeModel(url, "success", new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks), new ArrayList<>(addresses));
+        return new ScraperModel(url, "success", new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks), new ArrayList<>(addresses));
     }
 
     private void extractDataFromText(String text, Set<String> phones, Set<String> addresses) {
@@ -188,8 +188,8 @@ public class ScraperService {
     }
 
 
-    public List<ScrapeModel> scrapeFromCSV(MultipartFile file) {
-        List<Future<ScrapeModel>> futureList = new ArrayList<>();
+    public List<ScraperModel> scrapeFromCSV(MultipartFile file) {
+        List<Future<ScraperModel>> futureList = new ArrayList<>();
         int cores = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(cores * 2);
 
@@ -202,8 +202,8 @@ public class ScraperService {
             e.printStackTrace();
         }
 
-        List<ScrapeModel> results = new ArrayList<>();
-        for (Future<ScrapeModel> future : futureList) {
+        List<ScraperModel> results = new ArrayList<>();
+        for (Future<ScraperModel> future : futureList) {
             try {
                 results.add(future.get());
             } catch (ExecutionException | InterruptedException e) {
@@ -215,15 +215,15 @@ public class ScraperService {
         return results;
     }
 
-    public void analyzeData(List<ScrapeModel> scrapeModels) {
-        int totalWebsites = scrapeModels.size();
+    public void analyzeData(List<ScraperModel> scraperModels) {
+        int totalWebsites = scraperModels.size();
         int withAnyData = 0;
         int withPhoneNumbers = 0;
         int withSocialMediaLinks = 0;
         int withAddresses = 0;
         int invalidWebsites = 0;
 
-        for (ScrapeModel model : scrapeModels) {
+        for (ScraperModel model : scraperModels) {
             if (model.getStatus().equals("success")) {
                 withAnyData++;
                 if (!model.getPhoneNumbers().isEmpty()) {

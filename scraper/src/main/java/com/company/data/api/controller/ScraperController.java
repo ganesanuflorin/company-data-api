@@ -1,6 +1,6 @@
 package com.company.data.api.controller;
 
-import com.company.data.api.model.ScrapeModel;
+import com.company.data.api.model.ScraperModel;
 import com.company.data.api.service.ScraperService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,12 +20,12 @@ public class ScraperController {
     private final ScraperService scraperService;
 
     @GetMapping("/url")
-    public ScrapeModel scrape(@RequestParam String url) {
+    public ScraperModel scrape(@RequestParam String url) {
         return scraperService.scrapeWebsite(url);
     }
 
     @PostMapping("/processor")
-    public List<ScrapeModel> scrapeFromCSV(@RequestParam MultipartFile file) {
+    public List<ScraperModel> scrapeFromCSV(@RequestParam MultipartFile file) {
         return scraperService.scrapeFromCSV(file);
     }
 }
