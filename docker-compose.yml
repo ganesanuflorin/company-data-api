@@ -1,0 +1,13 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false    # doar pentru DEV (fără user/parolă)
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g      # memorie (poți pune 512m dacă ai puține resurse)
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+volumes:
+  esdata:

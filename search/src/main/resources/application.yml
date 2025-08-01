@@ -4,3 +4,14 @@ server:
 scraper:
   api:
     url: http://localhost:8080/scrape
+
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 20_000
+            read-timeout: 1_000_000
+  elasticsearch:
+    uris: http://localhost:9200

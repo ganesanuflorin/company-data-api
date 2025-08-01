@@ -44,16 +44,16 @@ public class ScraperService {
             Pattern.CASE_INSENSITIVE
     );
 
-    public ScraperModel scrapeWebsite(String url) {
-
-        if (url == null || url.isEmpty()) {
-            return new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
+    public ScraperModel scrapeWebsite(String domain) {
+        String url = "http://" + domain;
+        if (domain == null || domain.isEmpty()) {
+            return new ScraperModel(domain, "invalid", List.of(), List.of(), List.of());
         }
         int statusCode = validateUrl(url);
         if (statusCode != 200) {
-            return new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
+            return new ScraperModel(domain, "invalid", List.of(), List.of(), List.of());
         }
-        ScraperModel result = new ScraperModel(url, "invalid", List.of(), List.of(), List.of());
+        ScraperModel result = new ScraperModel(domain, "invalid", List.of(), List.of(), List.of());
         Set<String> phoneNumbers = new HashSet<>();
         Set<String> addresses = new HashSet<>();
         Set<String> socialMediaLinks = new HashSet<>();
@@ -67,7 +67,7 @@ public class ScraperService {
                         .userAgent("Mozilla/5.0")
                         .timeout(10_000)
                         .get();
-                result = scrapeWithJsoup(doc, fullUrl, phoneNumbers, addresses, socialMediaLinks);
+                result = scrapeWithJsoup(doc, fullUrl, phoneNumbers, addresses, socialMediaLinks, domain);
                 pathMap.put(fullUrl, result.getStatus());
 
             } catch (IOException e) {
@@ -84,10 +84,7 @@ public class ScraperService {
         if (seleniumCondition) {
             for (String path : pathMap.keySet()) {
                 if (pathMap.get(path).equals("success")) {
-                    result = scrapewWithSelenium(path, phoneNumbers, addresses, socialMediaLinks);
-                    if (!seleniumCondition) {
-                        return result;
-                    }
+                    result = scrapewWithSelenium(path, phoneNumbers, addresses, socialMediaLinks, domain);
                 }
             }
         }
@@ -110,7 +107,7 @@ public class ScraperService {
         return statusCode;
     }
 
-    private ScraperModel scrapewWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
+    private ScraperModel scrapewWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
 
         WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver();
@@ -130,13 +127,13 @@ public class ScraperService {
             String status = (phoneNumbers.isEmpty() && socialMediaLinks.isEmpty() && addresses.isEmpty())
                     ? "empty_after_fallback" : "success_fallback";
 
-            return new ScraperModel(url, status,
+            return new ScraperModel(domain, status,
                     new ArrayList<>(phoneNumbers),
                     new ArrayList<>(socialMediaLinks),
                     new ArrayList<>(addresses));
 
         } catch (RuntimeException e) {
-            return new ScraperModel(url, "selenium_failed", List.of(), List.of(), List.of());
+            return new ScraperModel(domain, "selenium_failed", List.of(), List.of(), List.of());
         } finally {
             driver.quit();
         }
@@ -154,7 +151,7 @@ public class ScraperService {
         }
     }
 
-    private ScraperModel scrapeWithJsoup(Document doc, String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks) {
+    private ScraperModel scrapeWithJsoup(Document doc, String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
 
         String htmlContent = doc.body().html();
         String plainText = Jsoup.parse(htmlContent.replaceAll("(?i)<br\\s*/?>", " ")).text().replaceAll("\\s+", " ").trim();
@@ -163,14 +160,14 @@ public class ScraperService {
         Elements aTags = doc.select("a[href]");
         for (Element aTag : aTags) {
             String href = aTag.absUrl("href");
-            for (String domain : SOCIAL_MEDIA_DOMAINS) {
-                if (href.contains(domain)) {
+            for (String link : SOCIAL_MEDIA_DOMAINS) {
+                if (href.contains(link)) {
                     socialMediaLinks.add(href);
                 }
             }
         }
 
-        return new ScraperModel(url, "success", new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks), new ArrayList<>(addresses));
+        return new ScraperModel(domain, "success", new ArrayList<>(phoneNumbers), new ArrayList<>(socialMediaLinks), new ArrayList<>(addresses));
     }
 
     private void extractDataFromText(String text, Set<String> phones, Set<String> addresses) {
@@ -194,8 +191,8 @@ public class ScraperService {
         ExecutorService executor = Executors.newFixedThreadPool(cores * 2);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
-            futureList = reader.lines()
-                    .map(line -> "http://" + line.trim())
+            futureList = reader.lines().skip(1)
+                    .map(String::trim)
                     .map(url -> executor.submit(() -> scrapeWebsite(url)))
                     .toList();
         } catch (IOException e) {
@@ -224,7 +221,7 @@ public class ScraperService {
         int invalidWebsites = 0;
 
         for (ScraperModel model : scraperModels) {
-            if (model.getStatus().equals("success")) {
+            if ("success".equals(model.getStatus())) {
                 withAnyData++;
                 if (!model.getPhoneNumbers().isEmpty()) {
                     withPhoneNumbers++;
@@ -235,7 +232,7 @@ public class ScraperService {
                 if (!model.getAddresses().isEmpty()) {
                     withAddresses++;
                 }
-            } else if (model.getStatus().equals("invalid")) {
+            } else if ("invalid".equals(model.getStatus())) {
                 invalidWebsites++;
             }
 
