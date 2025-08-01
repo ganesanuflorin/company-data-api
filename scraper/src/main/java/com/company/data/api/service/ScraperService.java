@@ -45,10 +45,10 @@ public class ScraperService {
     );
 
     public ScraperModel scrapeWebsite(String domain) {
-        String url = "http://" + domain;
         if (domain == null || domain.isEmpty()) {
             return new ScraperModel(domain, "invalid", List.of(), List.of(), List.of());
         }
+        String url = "http://" + domain;
         int statusCode = validateUrl(url);
         if (statusCode != 200) {
             return new ScraperModel(domain, "invalid", List.of(), List.of(), List.of());
@@ -67,7 +67,7 @@ public class ScraperService {
                         .userAgent("Mozilla/5.0")
                         .timeout(10_000)
                         .get();
-                result = scrapeWithJsoup(doc, fullUrl, phoneNumbers, addresses, socialMediaLinks, domain);
+                result = scrapeWithJsoup(doc, phoneNumbers, addresses, socialMediaLinks, domain);
                 pathMap.put(fullUrl, result.getStatus());
 
             } catch (IOException e) {
@@ -83,8 +83,8 @@ public class ScraperService {
                 result.getSocialMediaLinks().isEmpty();
         if (seleniumCondition) {
             for (String path : pathMap.keySet()) {
-                if (pathMap.get(path).equals("success")) {
-                    result = scrapewWithSelenium(path, phoneNumbers, addresses, socialMediaLinks, domain);
+                if ("success".equals(pathMap.get(path))) {
+                    result = scrapeWithSelenium(path, phoneNumbers, addresses, socialMediaLinks, domain);
                 }
             }
         }
@@ -92,22 +92,20 @@ public class ScraperService {
     }
 
     private int validateUrl(String url) {
-        int statusCode = 0;
         try {
-            statusCode = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0")
-                    .timeout(10_000)
-                    .ignoreHttpErrors(true)
-                    .execute()
-                    .statusCode();
+            return Jsoup.connect(url)
+                        .userAgent("Mozilla/5.0")
+                        .timeout(10_000)
+                        .ignoreHttpErrors(true)
+                        .execute()
+                        .statusCode();
         } catch (IOException e) {
-            statusCode = 404;
             System.err.println("Failed to connect to " + url + ": " + e.getMessage());
+            return 404;
         }
-        return statusCode;
     }
 
-    private ScraperModel scrapewWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
+    private ScraperModel scrapeWithSelenium(String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
 
         WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver();
@@ -151,7 +149,7 @@ public class ScraperService {
         }
     }
 
-    private ScraperModel scrapeWithJsoup(Document doc, String url, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
+    private ScraperModel scrapeWithJsoup(Document doc, Set<String> phoneNumbers, Set<String> addresses, Set<String> socialMediaLinks, String domain) {
 
         String htmlContent = doc.body().html();
         String plainText = Jsoup.parse(htmlContent.replaceAll("(?i)<br\\s*/?>", " ")).text().replaceAll("\\s+", " ").trim();
@@ -196,7 +194,7 @@ public class ScraperService {
                     .map(url -> executor.submit(() -> scrapeWebsite(url)))
                     .toList();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error reading file: " + e.getMessage());
         }
 
         List<ScraperModel> results = new ArrayList<>();
@@ -212,7 +210,7 @@ public class ScraperService {
         return results;
     }
 
-    public void analyzeData(List<ScraperModel> scraperModels) {
+    private void analyzeData(List<ScraperModel> scraperModels) {
         int totalWebsites = scraperModels.size();
         int withAnyData = 0;
         int withPhoneNumbers = 0;

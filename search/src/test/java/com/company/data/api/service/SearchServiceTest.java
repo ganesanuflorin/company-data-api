@@ -1,5 +1,6 @@
 package com.company.data.api.service;
 
+import com.company.data.api.dto.MatchRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -27,17 +28,13 @@ class SearchServiceTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    // DTO-ul folosit de endpointul tău /api/match
-    public record MatchRequest(String name, String website, String phone, String facebook) {
-    }
-
     @Test
     void testMatch() throws Exception {
         var csvRes = new ClassPathResource("API-input-sample.csv");
         try (var reader = new InputStreamReader(csvRes.getInputStream(), StandardCharsets.UTF_8);
              var parser = CSVParser.parse(reader, CSVFormat.DEFAULT
                      .builder()
-                     .setHeader()              // citește antetul
+                     .setHeader()              // reading the first line as header
                      .setSkipHeaderRecord(true)
                      .setTrim(true)
                      .build())) {
@@ -72,9 +69,7 @@ class SearchServiceTest {
             double rate = total == 0 ? 0.0 : (matched * 100.0 / total);
             System.out.printf("Matched %d / %d (%.2f%%)%n", matched, total, rate);
 
-            // opțional: asert minim (de ex. >50%)
             assertThat(total).isGreaterThan(0);
-            // assertThat(rate).isGreaterThan(50.0);
         }
     }
 
